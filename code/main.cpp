@@ -1,9 +1,11 @@
 #include <iostream>
 
-#include <stbi_image.h>
-#include <stbi_image_write.h>
+#include <Image.hpp>
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
+
+    auto l_image = ImgCartoonizer::Image::LoadFromPath("./resources/test.png");
+
     return 0;
 }

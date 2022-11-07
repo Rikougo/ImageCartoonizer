@@ -4,7 +4,7 @@ project(ImageCartoonizer)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCES
-        main.cpp)
+        main.cpp src/Image.hpp)
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 
