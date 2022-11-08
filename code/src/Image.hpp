@@ -28,6 +28,17 @@ namespace ImgCartoonizer {
             return Save(p_path, *this);
         }
 
+        static Image Create(int sizeX, int sizeY, int channels){
+           Image res{};
+
+           res.data = std::vector<float>(sizeX*sizeY*channels);
+           res.width  = sizeX;
+           res.height = sizeY; 
+           res.channels = channels;
+
+           return res;
+        }
+
         static Image Load(std::filesystem::path const &p_path) {
             Image l_result{};
 
@@ -47,6 +58,100 @@ namespace ImgCartoonizer {
 
             return l_result;
         }
+        
+        [[nodiscard]] Image avgGreyScale(){
+            auto res = Create(this->width, this->height, 1);
+            
+            for(int i = 0 ; i < this->width * this->height ; i ++){
+                res.data[i] = 0.0;
+                for(int c = 0 ; c < this->channels ; c++){
+                    res.data[i] += this->data[i*this->channels+c];
+                }
+                res.data[i] /= this->channels;
+            }
+            return res;
+        }
+
+        [[nodiscard]] Image seuil(float seuil, float min=0., float max=1.0){
+            auto res = Create(this->width, this->height, this->channels);
+            
+            for(int i = 0 ; i < this->width * this->height*this->channels ; i ++){
+                res.data[i] = this->data[i] < seuil ? min : max;
+            }
+            return res;
+        }
+
+        [[nodiscard]] Image seuilHysteresis(float seuilLow, float seuilHigh, float min=0., float max=1.){
+            auto res = Create(this->width, this->height, this->channels);
+
+            auto aSeuiller = std::vector<std::pair<int,int>>();
+            auto tag = std::vector<int>(this->width*this->height,0);
+
+            /*
+            0 on sait pas
+            1 c'est haut
+            2 c'est bas
+            */
+
+            for(int y = 0 ; y<this->width ; y ++){
+                for(int x = 0 ; x < this->height ; x++){
+                    aSeuiller.push_back(std::pair<int,int>(x,y));
+                }
+            }
+
+            bool done = false;
+            while(!done){
+                std::cout<<"loop"<<std::endl;
+                done = true;
+                for(int i = 0 ; i < aSeuiller.size() ; i++){
+                    int index = aSeuiller[i].second * this->width + aSeuiller[i].first;
+                    if(tag[index] == 0){
+                        float val = this->data[index];
+                        if(val > seuilHigh){
+                            res.data[index] = max;
+                            tag[index] = 1;
+                        }else if(val < seuilLow){
+                            res.data[index] = min;
+                            tag[index] = 2;
+
+                        }else{
+                            bool atLeastOneBig = false;
+                            bool allSmall      = true;
+
+                            for(int dy = -1 ; dy <= 1 ; dy++){
+                                for(int dx = -1 ; dx <= 1 ; dx++){
+                                    if(aSeuiller[i].second+dy >= 0 && aSeuiller[i].second+dy < this->height &&
+                                        aSeuiller[i].first+dx >= 0 && aSeuiller[i].first+dx < this->width
+                                    ){
+                                        int tagVal = tag[(aSeuiller[i].second+dy) * this->width + (aSeuiller[i].first+dx)];
+                                        if(tagVal==1){
+                                            atLeastOneBig = true;
+                                        }if(tagVal==0){
+                                            allSmall = false;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(allSmall){
+                                res.data[index] = min;
+                                tag[index] = 2;
+                            }else if(atLeastOneBig){
+                                res.data[index] = max;
+                                tag[index] = 1;
+                            }else{
+                                done = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            return res;
+        }
+
+
 
         static bool Save(std::filesystem::path const &p_path, Image const &p_image, float min = 0., float max = 1.0) {
 
