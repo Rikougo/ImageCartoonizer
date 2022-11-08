@@ -93,15 +93,22 @@ namespace ImgCartoonizer {
             2 c'est bas
             */
 
-            for(int y = 0 ; y<this->width ; y ++){
-                for(int x = 0 ; x < this->height ; x++){
+            for(int y = 0 ; y<this->height ; y ++){
+                for(int x = 0 ; x < this->width ; x++){
                     aSeuiller.push_back(std::pair<int,int>(x,y));
+                    //tag.push_back(0);
                 }
+
             }
 
+            bool looping = false;
             bool done = false;
-            while(!done){
-                std::cout<<"loop"<<std::endl;
+            int nbRemaining = this->width * this->height;
+            int pRemaining;
+            while(!done && !looping){
+                looping = pRemaining == nbRemaining;;
+                pRemaining = nbRemaining;
+                std::cout<<"Remaining : "<<nbRemaining<<std::endl;
                 done = true;
                 for(int i = 0 ; i < aSeuiller.size() ; i++){
                     int index = aSeuiller[i].second * this->width + aSeuiller[i].first;
@@ -109,24 +116,26 @@ namespace ImgCartoonizer {
                         float val = this->data[index];
                         if(val > seuilHigh){
                             res.data[index] = max;
+                            nbRemaining--;
                             tag[index] = 1;
                         }else if(val < seuilLow){
                             res.data[index] = min;
+                            nbRemaining--;
                             tag[index] = 2;
-
                         }else{
                             bool atLeastOneBig = false;
                             bool allSmall      = true;
 
                             for(int dy = -1 ; dy <= 1 ; dy++){
                                 for(int dx = -1 ; dx <= 1 ; dx++){
+                                    int ind = (aSeuiller[i].second+dy) * this->width + (aSeuiller[i].first+dx);
                                     if(aSeuiller[i].second+dy >= 0 && aSeuiller[i].second+dy < this->height &&
-                                        aSeuiller[i].first+dx >= 0 && aSeuiller[i].first+dx < this->width
+                                        aSeuiller[i].first+dx >= 0 && aSeuiller[i].first+dx  < this->width
                                     ){
                                         int tagVal = tag[(aSeuiller[i].second+dy) * this->width + (aSeuiller[i].first+dx)];
                                         if(tagVal==1){
                                             atLeastOneBig = true;
-                                        }if(tagVal==0){
+                                        }if(tagVal==2){
                                             allSmall = false;
                                         }
                                     }
@@ -135,15 +144,24 @@ namespace ImgCartoonizer {
 
                             if(allSmall){
                                 res.data[index] = min;
+                                nbRemaining--;
                                 tag[index] = 2;
                             }else if(atLeastOneBig){
                                 res.data[index] = max;
+                                nbRemaining--;
                                 tag[index] = 1;
                             }else{
                                 done = false;
                             }
                         }
                     }
+                }
+                
+            }
+
+            for(int i = 0 ; i < this->width * this->height ; i ++ ){
+                if(tag[i] == 0){
+                    res.data[i] = 0.0;
                 }
             }
 

@@ -9,7 +9,7 @@ int main() {
     auto canny = cannyFilter(l_image);
 
 
-    ImgCartoonizer::Image::Save("results/canny.png", canny,-1,1);
+    ImgCartoonizer::Image::Save("results/cannyHister.png", canny,0,1); 
 
 
     return 0;

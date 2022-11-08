@@ -82,9 +82,7 @@ namespace ImgCartoonizer {
                 }
             }
         }
-        contour = contour.seuilHysteresis(0.3, 0.7);
-
-
+        contour = contour.seuilHysteresis(0.2, 0.6);
         return contour;
     }
 }
