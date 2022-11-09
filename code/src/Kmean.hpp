@@ -13,8 +13,8 @@ namespace ImgCartoonizer {
     struct Point2D {int x, y; };
     typedef std::vector<unsigned char> Pixel;
 
-    int SquareDist(unsigned char* p_left, unsigned char* p_right, int p_channels) {
-        int l_result = 0;
+    float SquareDist(const float* p_left, const float* p_right, int p_channels) {
+        float l_result = 0;
         for (int i = 0; i < p_channels; i++) {
             l_result += (p_right[i] - p_left[i]) * (p_right[i] - p_left[i]);
         }
@@ -23,14 +23,15 @@ namespace ImgCartoonizer {
     }
 
     Image Kmean(Image const &p_source, int p_k = 5, int p_iter = 10) {
-        std::vector<Pixel> l_centroids(p_k, Pixel(p_source.channels));
+        Image l_result{p_source};
+        std::vector<std::vector<float>> l_centroids(p_k, std::vector<float>(p_source.channels));
 
         std::random_device l_device{};
         std::uniform_int_distribution l_widthDistrib{0, p_source.width};
         std::uniform_int_distribution l_heightDistrib(0, p_source.height);
 
         for(int i = 0; i < p_k; i++) {
-            std::vector<unsigned char> l_value;
+            std::vector<float> l_value;
             l_value.reserve(p_source.channels);
 
             auto l_pixel = p_source.PixelAt(l_widthDistrib(l_device), l_heightDistrib(l_device));
@@ -46,11 +47,11 @@ namespace ImgCartoonizer {
             for(auto &l_cluster : l_clusters) l_cluster.clear();
             for(int xPos = 0; xPos < p_source.width; xPos++) {
                 for(int yPos = 0; yPos < p_source.height; yPos++) {
-                    int l_minValue = std::numeric_limits<int>::max();
+                    float l_minValue = std::numeric_limits<float>::max();
                     size_t l_minCluster = 0;
 
                     for(int c = 0; c < p_k; c++) {
-                        int l_squareDist = SquareDist(
+                        float l_squareDist = SquareDist(
                                 p_source.PixelAt(xPos, yPos),
                                 l_centroids[c].data(),
                                 p_source.channels);
@@ -67,24 +68,24 @@ namespace ImgCartoonizer {
 
             // update centroids
             for(int c = 0; c < p_k; c++) {
-                std::vector<int> l_newCentroid(p_source.channels, 0);
+                std::vector<float> l_newCentroid(p_source.channels, 0);
                 for(auto &l_position : l_clusters[c]) {
-                    unsigned char* l_pixel = p_source.PixelAt(l_position.x, l_position.y);
+                    const float* l_pixel = p_source.PixelAt(l_position.x, l_position.y);
                     for(int i = 0; i < p_source.channels; i++) {
                         l_newCentroid[i] += l_pixel[i];
                     }
                 }
 
                 for(int i = 0; i < p_source.channels; i++) {
-                    if (l_clusters[c].size() > 0)
-                        l_centroids[c][i] = static_cast<unsigned char>(l_newCentroid[i] / l_clusters[c].size());
+                    if (!l_clusters[c].empty())
+                        l_centroids[c][i] = (l_newCentroid[i] / (float)l_clusters[c].size());
                 }
             }
         }
 
         for(int c = 0; c < p_k; c++) {
-            for(auto &l_position : l_clusters[c]) {
-                auto l_pixel = p_source.PixelAt(l_position.x, l_position.y);
+            for(auto const &l_position : l_clusters[c]) {
+                auto l_pixel = l_result.PixelAt(l_position.x, l_position.y);
 
                 for(int i = 0; i < p_source.channels; i++) {
                     l_pixel[i] = l_centroids[c][i];
@@ -92,7 +93,7 @@ namespace ImgCartoonizer {
             }
         }
 
-        return Image{};
+        return l_result;
     };
 }
 
