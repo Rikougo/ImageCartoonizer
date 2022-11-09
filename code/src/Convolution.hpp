@@ -47,7 +47,6 @@ namespace ImgCartoonizer {
 
                         }
                     }
-                    //res.data[(y*imgIn.width + x)*imgIn.channels + c] = std::min(std::max((int)(val+shift),0),255);
                     res.data[(y*imgIn.width + x)*imgIn.channels + c] = val;
                 }
             }
