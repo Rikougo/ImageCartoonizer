@@ -204,8 +204,9 @@ namespace ImgCartoonizer {
 
                             for(auto n : fourNei){ // et on rend ses voisins (du même étage) traitables
                                 auto nCord = n+p.second;
-                                if(inImage(nCord, l_image) && zones[nCord] == -1){
-                                    traitable.push({*gradient.PixelAt(nCord),nCord});
+                                float val = *gradient.PixelAt(nCord);
+                                if(inImage(nCord, l_image) && val < curentMaxVal && zones[nCord] == -1){
+                                    traitable.push({val,nCord});
                                     in_queue_or_processed[nCord] = true;
                                 }
                             }
@@ -217,7 +218,7 @@ namespace ImgCartoonizer {
                 while(traitable.size()>0){ // On traite tout les pixels traitables
 
                     if(nbProcessed%10==0)
-                    affProgressBar(iteration,0,steps,nbProcessed,0,etage.size(),"Etage","");
+                    affProgressBar(iteration,0,steps,nbProcessed,0,etage.size(),"Étage","Pixels de l'étage");
 
                     auto current = traitable.front();
                     traitable.pop();
@@ -246,6 +247,11 @@ namespace ImgCartoonizer {
                     }
                     zones[current.second] = (state == -1 ? nextPool++ : state);
                     nbProcessed++;
+                    
+                    if(zones[current.second] == -1){
+                        std::cout<<"what is the actual fuck ???"<<std::endl;
+                        return res;
+                    }
                 }
                 
             }
@@ -335,6 +341,7 @@ namespace ImgCartoonizer {
                 if(zones[pos] == -1){
                     std::cout<<"OSKOUR"<<std::endl;
                     std::cout<<"i : "<<i<<std::endl;
+                    std::cout<<"val :"<<gradient.data[i]<<std::endl;
                 }
 
                 //zones[i] = newZone[zones[i]];
