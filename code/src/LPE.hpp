@@ -181,7 +181,7 @@ namespace ImgCartoonizer {
                 bool ttb = false;
                 for(auto n : fourNei){
                     auto nCord = n+p.second;
-                    if(inImage(nCord, l_image) && zones[p.second] > 0){
+                    if(inImage(nCord, l_image) && zones[nCord] > 0){
                         ttb = true;
                         break;
                     }
@@ -205,6 +205,12 @@ namespace ImgCartoonizer {
                             for(auto n : fourNei){ // et on rend ses voisins (du même étage) traitables
                                 auto nCord = n+p.second;
                                 float val = *gradient.PixelAt(nCord);
+
+
+                                if(zones[nCord] > 0){
+                                    std::cout<<"gros soucis"<<std::endl;
+                                }
+
                                 if(inImage(nCord, l_image) && val < curentMaxVal && zones[nCord] == -1){
                                     traitable.push({val,nCord});
                                     in_queue_or_processed[nCord] = true;
@@ -232,18 +238,26 @@ namespace ImgCartoonizer {
                         if(inImage(nCord, l_image)){
                             int nstate = zones[nCord];
                             float nval = *gradient.PixelAt(nCord);
-                            state = (nstate == -1 || nstate == 0 || nstate == state ) ? state : state == -1 ? nstate : 0 ;
 
-                            if(!in_queue_or_processed[nCord] && nstate == -1){
-                                if(nval < curentMaxVal){
-                                    traitable.push({nval,nCord});
-                                    in_queue_or_processed[nCord] = true;
+
+                            if(state == 0 || nstate == -1 || nstate == 0 || nstate == state){
+                                state = state;
+                            }else if(state == -1 && nstate>0 ){
+                                state = nstate;
+                            }else if(state > 0 && nstate > 0){
+                                if(state != nstate){
+                                    state = 0;
                                 }
+                            }
+
+                            if(!in_queue_or_processed[nCord] && nstate == -1 && nval < curentMaxVal){              
+                                traitable.push({nval,nCord});
+                                in_queue_or_processed[nCord] = true;
                             } 
                         }
 
-                        if(state==0)
-                        break;
+                        // if(state==0)
+                        // break;
                     }
                     zones[current.second] = (state == -1 ? nextPool++ : state);
                     nbProcessed++;
@@ -349,7 +363,8 @@ namespace ImgCartoonizer {
                 if(zones[pos] == 0 || zones[pos] == -1){
                     res.data[3*i + 0] = 0;
                     res.data[3*i + 1] = 0;
-                    res.data[3*i + 2] = 0; 
+                    res.data[3*i + 2] = 0;
+
                 }else{
                     float val = map(zones[pos],0.0,(float)nextPool,0.,1.);
 
@@ -359,6 +374,10 @@ namespace ImgCartoonizer {
                     res.data[3*i + 0] = c[0];
                     res.data[3*i + 1] = c[1];
                     res.data[3*i + 2] = c[2];
+
+                    // res.data[3*i + 0] = 1;
+                    // res.data[3*i + 1] = 1;
+                    // res.data[3*i + 2] = 1;
                 }
             }
         }
