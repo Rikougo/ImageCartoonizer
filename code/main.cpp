@@ -6,7 +6,7 @@
 #include <LPE.hpp>
 
 int main() {
-    auto l_image = ImgCartoonizer::Image::Load("./images/asteri2.png");
+    auto l_image = ImgCartoonizer::Image::Load("./images/asterix2.png");
     auto canny = cannyFilter(l_image);
 
     auto wota = LPE(l_image);
