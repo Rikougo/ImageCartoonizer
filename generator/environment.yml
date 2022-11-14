@@ -1,0 +1,6 @@
+name: cartoon-generator
+dependencies:
+  - pip
+  - pip:
+    - openai==0.25.*
+    - imageai==2.1.*
