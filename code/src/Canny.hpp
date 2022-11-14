@@ -14,9 +14,9 @@ float bilinearInterpolation(float x,float y,float val1,float val2,float val3,flo
 }
 
 namespace ImgCartoonizer {
-    Image cannyFilter(Image l_image){
 
-        float blurConv[] = {
+    Image gradient(Image l_image){
+         float blurConv[] = {
             2, 4 , 5 , 4 , 2, 
             4, 9 , 12, 9 , 4,
             5, 12, 15, 12, 5,
@@ -46,12 +46,20 @@ namespace ImgCartoonizer {
         auto bluryyGrad = ImgCartoonizer::filter(greyBlury, yGrad);
 
         auto gradient = ImgCartoonizer::Image::Create(l_image.width,l_image.height,2);
-        auto contour = ImgCartoonizer::Image::Create(l_image.width,l_image.height,1);
 
         for(int i = 0 ; i < l_image.width * l_image.height ; i ++){
-            gradient.data[i*2 + 0]   = std::sqrt(bluryxGrad.data[i]*bluryxGrad.data[i] + bluryyGrad.data[i]*bluryyGrad.data[i]);
+            gradient.data[i*2 + 0] = std::sqrt(bluryxGrad.data[i]*bluryxGrad.data[i] + bluryyGrad.data[i]*bluryyGrad.data[i]);
             gradient.data[i*2 + 1] = std::atan(bluryxGrad.data[i]/bluryyGrad.data[i]);
         }
+
+        return gradient;
+    }
+
+
+    Image cannyFilter(Image l_image){
+
+        auto gradient = ImgCartoonizer::gradient(l_image);
+        auto contour = ImgCartoonizer::Image::Create(l_image.width,l_image.height,1);
 
         for(int y = 1 ; y < gradient.height-1 ; y++){
             for(int x = 1 ; x < gradient.width-1 ; x++){
@@ -83,6 +91,7 @@ namespace ImgCartoonizer {
             }
         }
         contour = contour.seuilHysteresis(0.2, 0.6);
+
         return contour;
     }
 }

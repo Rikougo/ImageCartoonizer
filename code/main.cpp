@@ -2,17 +2,17 @@
 
 #include <Image.hpp>
 #include <Convolution.hpp>
-#include <Kmean.hpp>
+#include <Canny.hpp>
+#include <LPE.hpp>
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
+int main()
+{
+    auto l_image = ImgCartoonizer::Image::Load("./images/asterix2.png");
+    auto canny = cannyFilter(l_image);
 
-    auto l_image = ImgCartoonizer::Image::Load("./images/renard_noel.png");
+    auto wota = LPE(l_image);
 
-    auto l_kmean = ImgCartoonizer::Kmean(l_image, 2, 15);
-
-    l_kmean.Save("test.png");
-
+    ImgCartoonizer::Image::Save("results/wotaMathieu.png", wota, 0, 1);
 
     return 0;
 }

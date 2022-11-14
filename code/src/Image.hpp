@@ -40,6 +40,10 @@ namespace ImgCartoonizer {
             return data.data() + (y * width + x) * channels;
         }
 
+        [[nodiscard]] const float * PixelAt(std::pair<int,int> p) const {
+            return data.data() + (p.second * width + p.first) * channels;
+        }
+
         bool Save(std::filesystem::path const &p_path) const {
             return Save(p_path, *this);
         }
@@ -124,7 +128,6 @@ namespace ImgCartoonizer {
             while(!done && !looping){
                 looping = pRemaining == nbRemaining;;
                 pRemaining = nbRemaining;
-                std::cout<<"Remaining : "<<nbRemaining<<std::endl;
                 done = true;
                 for(int i = 0 ; i < aSeuiller.size() ; i++){
                     int index = aSeuiller[i].second * this->width + aSeuiller[i].first;
