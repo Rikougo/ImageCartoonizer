@@ -91,10 +91,9 @@ std::pair<T,U> operator+(const std::pair<T,U> & l,const std::pair<T,U> & r) {
 }
 
 
-
 namespace ImgCartoonizer {  
 
-    Image LPE(Image l_image, int steps = 10){
+    std::map<std::pair<int,int>,int> LPE(Image l_image, int steps = 50){
 
         auto fourNei = std::vector<std::pair<int,int>>();
         fourNei.push_back({ 1, 0});
@@ -102,18 +101,23 @@ namespace ImgCartoonizer {
         fourNei.push_back({ 0, 1});
         fourNei.push_back({ 0,-1});
 
-        // fourNei.push_back({ 1, 1});
-        // fourNei.push_back({-1,-1});
-        // fourNei.push_back({ 1,-1});
-        // fourNei.push_back({-1, 1});
+        fourNei.push_back({ 1, 1});
+        fourNei.push_back({-1,-1});
+        fourNei.push_back({ 1,-1});
+        fourNei.push_back({-1, 1});
+        
 
-        auto inImage = [](std::pair<int,int> p, Image l_image){
+        auto inImage = [](const std::pair<int,int>& p, const Image & l_image){
             return(p.first>=0 && p.second>=0 && p.first < l_image.width && p.second < l_image.height);
         };
 
         auto res = ImgCartoonizer::Image::Create(l_image.width, l_image.height, 3);
 
         auto gradient = ImgCartoonizer::gradient(l_image);
+        //auto gradient = ImgCartoonizer::contour(l_image); 
+
+        //ImgCartoonizer::Image::Save("results/usedGradForSeg.png", gradient,0,1); 
+
 
         
         auto sortedImage = std::vector<std::pair<float,std::pair<int,int>>>();
@@ -122,12 +126,12 @@ namespace ImgCartoonizer {
         // 0 LPE
         // n>0 bassin n
 
-        float minVal = gradient.data[2*(0*gradient.width + 0)+0];
+        float minVal = *gradient.PixelAt(0,0);
         float maxVal = minVal;
 
         for(int y = 0 ; y < l_image.height ; y ++){
             for(int x = 0 ; x < l_image.width ; x ++){
-                auto val = gradient.data[2*(y*gradient.width + x)+0];
+                float val = *gradient.PixelAt(x,y);
                 sortedImage.push_back({val,{x,y}});
                 zones[{x,y}] = -1;
                 if(val>maxVal){
@@ -146,7 +150,7 @@ namespace ImgCartoonizer {
         std::sort(sortedImage.begin(),sortedImage.end());
         
 
-        int nextPool = 0;
+        int nextPool = 1;
 
         
         auto traitable = std::queue<std::pair<float,std::pair<int,int>>>();
@@ -196,7 +200,7 @@ namespace ImgCartoonizer {
 
             while(nbProcessed<etage.size()){ // tant qu'il reste des pixels non taités à l'étage on continue
 
-                if(traitable.size()==0){ // si il n'y a plus de pixels traitable, on creer un nouveau bassin
+                if(traitable.size()==0){ // s'il n'y a plus de pixels traitable, on creer un nouveau bassin
                     for(auto p : etage){
                         if(zones[p.second] == -1){
                             zones[p.second] = nextPool++;
@@ -255,110 +259,53 @@ namespace ImgCartoonizer {
                                 in_queue_or_processed[nCord] = true;
                             } 
                         }
-
-                        // if(state==0)
-                        // break;
                     }
                     zones[current.second] = (state == -1 ? nextPool++ : state);
                     nbProcessed++;
-                    
-                    if(zones[current.second] == -1){
-                        std::cout<<"what is the actual fuck ???"<<std::endl;
-                        return res;
-                    }
                 }
                 
             }
             iteration++;
         }
 
-        {
-            //vérifier si tout les pixel de l'étage sont traités
-            //remettre les pixels non traités dans le vecteur image
+        nextPool++;
 
-            /*
-            
-            for(int ind = 0 ; ind < sortedImage.size() ; ind++){
-                if(ind % 100 == 0)
-                affProgressBar(ind,0,sortedImage.size());
-                auto value= sortedImage[ind];
-
-                int x = value.second.first;
-                int y = value.second.second;
-
-                int state = -1;
-                
-                for(auto n : fourNei){
-
-                    int nx = x+n.first;
-                    int ny = y+n.second;
-
-                    if(nx < l_image.width && nx >= 0 && ny < l_image.height && ny >= 0){
-                        int vstate = zones[ny*l_image.width + nx];
-
-                        //auto sameFloor = std::abs(value.first - *l_image.PixelAt(nx,ny)) < stepWidth;
-
-                        state = vstate == -1 || vstate == 0 || vstate == state  ? state : state == -1 ? vstate : 0 ;
-
-                        if(sameFloor && vstate>0 && state>0 && state!=vstate){
-                            for(int i = 0 ; i < zones.size() ; i ++){
-                                if(zones[i] == state){
-                                    zones[i] = vstate;
-                                }
-                            }
-                        }
-
-                        if(state==0)
-                        break;  
-                    }
-                }
-
-                if(state == -1){
-                    zones[y*l_image.width + x] = nextPool++;
-                }else{
-                    zones[y*l_image.width + x] =  state;     
-                }   
+        for(auto z : sortedImage){
+            if(zones[z.second] == -1){
+                std::cout<<"ALED"<<std::endl;
+                zones[z.second] = nextPool;
             }
-            */
-
-            /*
-            auto newZone = std::vector<int>();
-
-            for(int i = 0 ; i < nextPool ; i ++){
-                newZone.push_back(i);
-            }
-
-            
-            for(int i = 0 ; i< fusion.size() ; i ++){
-                auto f = fusion[i];
-                int toReplaceval = newZone[f.second]; 
-                int newval = newZone[f.first];
-                affProgressBar(i,0,fusion.size());
-                for(int i = 0 ; i < newZone.size() ; i++){
-                    if(newZone[i] == toReplaceval){
-                        newZone[i] = newval;
-                    }
-                }
-            }
-            */
-
         }
 
 
 
-        for(int y = 0 ; y < l_image.height ; y ++){
-            for(int x = 0 ; x < l_image.width ; x ++){
 
-                int i = y * l_image.width + x;
-                auto pos = std::make_pair(x,y);
+        return zones;
+    }
 
-                if(zones[pos] == -1){
-                    std::cout<<"OSKOUR"<<std::endl;
-                    std::cout<<"i : "<<i<<std::endl;
-                    std::cout<<"val :"<<gradient.data[i]<<std::endl;
+    int zoneIndexMax(std::map<std::pair<int,int>,int> zones, int width, int height){
+        int max = 0;
+        for(int y = 0 ; y < width ; y ++){
+            for(int x = 0 ; x < height ; x++){
+                if(zones[std::make_pair(x,y)] > max){
+                    max = zones[std::make_pair(x,y)];
                 }
+            }
+        }
+        return max;
+    }
 
-                //zones[i] = newZone[zones[i]];
+    Image fromZonesToImage(std::map<std::pair<int,int>,int> zones, int width, int height){
+
+        Image res = Image::Create(width,height,3);
+
+        int max = zoneIndexMax(zones, width, height);
+        
+        for(int y = 0 ; y < height ; y ++){
+            for(int x = 0 ; x < width ; x ++){
+
+                int i = y * width + x;
+                auto pos = std::make_pair(x,y);
 
                 if(zones[pos] == 0 || zones[pos] == -1){
                     res.data[3*i + 0] = 0;
@@ -366,7 +313,7 @@ namespace ImgCartoonizer {
                     res.data[3*i + 2] = 0;
 
                 }else{
-                    float val = map(zones[pos],0.0,(float)nextPool,0.,1.);
+                    float val = map(zones[pos],0.0,(float)max,0.,1.);
 
                     auto c = HSVtoRGB(val,1,1);
                     
@@ -374,10 +321,6 @@ namespace ImgCartoonizer {
                     res.data[3*i + 0] = c[0];
                     res.data[3*i + 1] = c[1];
                     res.data[3*i + 2] = c[2];
-
-                    // res.data[3*i + 0] = 1;
-                    // res.data[3*i + 1] = 1;
-                    // res.data[3*i + 2] = 1;
                 }
             }
         }

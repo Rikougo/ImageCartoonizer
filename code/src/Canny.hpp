@@ -55,8 +55,7 @@ namespace ImgCartoonizer {
         return gradient;
     }
 
-
-    Image cannyFilter(Image l_image){
+    Image contour(Image l_image){
 
         auto gradient = ImgCartoonizer::gradient(l_image);
         auto contour = ImgCartoonizer::Image::Create(l_image.width,l_image.height,1);
@@ -90,8 +89,15 @@ namespace ImgCartoonizer {
                 }
             }
         }
-        contour = contour.seuilHysteresis(0.2, 0.6);
-
         return contour;
+    }
+
+
+    Image cannyFilter(Image l_image){
+
+        auto ct = contour(l_image);
+        ct = ct.seuilHysteresis(0.2, 0.6);
+
+        return ct;
     }
 }

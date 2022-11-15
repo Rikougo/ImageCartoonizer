@@ -20,27 +20,11 @@ namespace ImgCartoonizer {
         int width, height;
         int channels;
 
-        Image() {
-            this->width = -1;
-            this->height = -1;
-            this->channels = -1;
-        }
-
-        Image(const Image& p_source) {
-            this->data.resize(p_source.data.size());
-            std::copy(p_source.data.begin(), p_source.data.end(), this->data.begin());
-            this->width = p_source.width; this->height = p_source.height; this->channels = p_source.channels;
-        }
-
         [[nodiscard]] float * PixelAt(int x, int y) {
             return data.data() + (y * width + x) * channels;
         }
 
-        [[nodiscard]] const float * PixelAt(int x, int y) const {
-            return data.data() + (y * width + x) * channels;
-        }
-
-        [[nodiscard]] const float * PixelAt(std::pair<int,int> p) const {
+        [[nodiscard]] float * PixelAt(std::pair<int,int> p) {
             return data.data() + (p.second * width + p.first) * channels;
         }
 
@@ -222,8 +206,8 @@ namespace ImgCartoonizer {
                 throw std::exception("Unsupported file extension");
             }*/
 
-            delete[] tmpData;
-            return false;
+            delete tmpData;
+            return 0;
         }
     };
 }
