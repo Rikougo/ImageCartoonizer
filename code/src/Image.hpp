@@ -15,6 +15,46 @@
 #include <stbi_image_write.h>
 
 namespace ImgCartoonizer {
+
+    struct Color{
+        float r;
+        float g;
+        float b;
+
+        float a;
+        bool exist;
+
+        Color(float red, float green, float blue){
+            r = red;
+            g = green;
+            b = blue;
+
+            a = 1;
+            exist = true;
+        }
+        Color(){
+            r = 0;
+            g = 0;
+            b = 0;
+
+            a = 1;
+            exist = true;
+        }
+
+        static Color interpolate(Color c1, Color c2, float d1, float d2){
+            Color res;
+            float pc1 = d1/(d1+d2);
+            float pc2 = d2/(d1+d2);
+
+            res.r = c1.r * pc1 + c2.r * pc2;
+            res.g = c1.g * pc1 + c2.g * pc2;
+            res.b = c1.b * pc1 + c2.b * pc2;
+
+            return res;
+        }
+    };
+
+
     struct Image {
         std::vector<float> data;
         int width, height;
@@ -30,6 +70,10 @@ namespace ImgCartoonizer {
 
         bool Save(std::filesystem::path const &p_path) const {
             return Save(p_path, *this);
+        }
+
+        bool inImage(const std::pair<int,int>& p){
+            return(p.first>=0 && p.second>=0 && p.first < width && p.second < height);
         }
 
         static Image Create(int sizeX, int sizeY, int channels){
