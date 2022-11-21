@@ -1,1 +1,6 @@
 **/*.key
+**/build
+**/.vs
+**/.vscode
+
+**/images
