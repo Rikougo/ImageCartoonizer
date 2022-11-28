@@ -128,12 +128,54 @@ namespace ImgCartoonizer {
             return getColor(pos.first,pos.second);
         }
 
+        static Image mergeFromImagettes(std::map<int,Imagette> imagettes, std::map<std::pair<int,int>,int> & zones, int width, int height){
+            auto res = Image::Create(width,height,3);
+
+            for(int y = 0 ; y < height ; y++ ){
+                for(int x = 0 ; x < width ; x++){
+                    auto pix = res.PixelAt(x,y);
+                    auto zone = zones[std::make_pair(x,y)];
+
+                    if(zone > 0){
+                        auto img = imagettes[zone];
+                        auto c = img.pixels[(y-img.startY)*img.width+(x-img.startX)];
+
+                        if(c.exist){
+                            pix[0] = c.r;
+                            pix[1] = c.g;
+                            pix[2] = c.b;
+                            
+                        }else{
+                            std::cout<<"Le pixel n'existe pas x : "<<x<<" y : "<<y<<std::endl;
+
+                            pix[0] = 1.0;
+                            pix[1] = 1.0;
+                            pix[2] = 1.0;
+                        }
+                    }else{
+                        pix[0] = 0.0;
+                        pix[1] = 0.0;
+                        pix[2] = 0.0;
+                    }
+                }
+            }
+
+            return res;
+        }
+
         static std::map<int,Imagette> splitZonesInImagettes(Image & l_image,std::map<std::pair<int,int>,int> & zones){
             int maxZone = zoneIndexMax(zones, l_image.width, l_image.height);
+            std::cout<<"maxZone : "<<maxZone<<std::endl;
+
+            auto usedZones = printUnUsedZones(zones,l_image.width, l_image.height);
 
             auto imagettes = std::map<int,Imagette>();
 
-            for(int i = 0 ; i < maxZone ; i ++){ // creer une imagette par zone
+            for(int i = 0 ; i <= maxZone ; i ++){ // creer une imagette par zone
+
+                if(!usedZones[i])
+                continue;
+
                 imagettes[i] = Imagette();
 
                 imagettes[i].startX = l_image.width;
@@ -145,6 +187,8 @@ namespace ImgCartoonizer {
 
                 imagettes[i].width  = 0;
                 imagettes[i].height = 0;
+
+                //imagettes[i].pixels = std::vector<Color>();
             }
             
 
@@ -160,24 +204,48 @@ namespace ImgCartoonizer {
                 }
             }
 
-            for(int i = 0 ; i < maxZone ; i ++){
-                imagettes[i].width  = imagettes[i].endX - imagettes[i].startX;
-                imagettes[i].height = imagettes[i].endY - imagettes[i].startY;
+            for(int i = 0 ; i < maxZone ; i ++){ //calculer les dimensions de chaques zones
+                if(!usedZones[i])
+                continue;
+
+                imagettes[i].width  = imagettes[i].endX - imagettes[i].startX+1;
+                imagettes[i].height = imagettes[i].endY - imagettes[i].startY+1;
+
+                if(imagettes[i].width < 0 || imagettes[i].height < 0){
+                    std::cout<<"Une des dimensions est négative w : "<<imagettes[i].width<<" h : "<<imagettes[i].height<<std::endl;
+                    std::cout<<"Zone : "<<i<<std::endl;
+                }
             }
 
 
             //remplir les imagettes avec les pixels
 
             for(int i = 0 ; i < maxZone ; i ++){
+                if(!usedZones[i]){
+                    continue;
+                    std::cout<<"skipping"<<std::endl;
+                }
+
                 Imagette & img = imagettes[i];
 
-                for(int y = img.startY ; y < img.width + img.startY ; y ++){
-                    for(int x = img.startX ; x < img.height + img.startX ; x ++){
+
+                if(img.width < 0 || img.height < 0){
+                    std::cout<<"Skip bug zone"<<std::endl;
+                    continue;
+                }
+
+                std::cout<<"Je suis là w : "<<img.width<<" h : "<<img.height<<std::endl;
+                img.pixels.resize(img.width*img.height);
+                std::cout<<"Je pas là"<<std::endl;
+
+                for(int y = img.startY ; y <= img.endY ; y ++){
+                    for(int x = img.startX ; x <= img.endX ; x ++){
                         auto pos = std::make_pair(x,y);
                         Color c;
 
                         if(zones[pos] == i){
                             auto pix = l_image.PixelAt(pos);
+
                             if(l_image.channels == 3){
                                 c = Color(pix[0],pix[1],pix[2]);
                             }else if(l_image.channels == 2){
@@ -188,7 +256,8 @@ namespace ImgCartoonizer {
                         }else{
                             c.exist = false;
                         }
-                        img.pixels.push_back(c);                        
+                        img.pixels[(y-img.startY)*img.width+x-img.startX] = c;
+                        //img.pixels.push_back(c);                        
                     }
                 }
             }
@@ -208,7 +277,7 @@ namespace ImgCartoonizer {
             res.direction = 0;
             int nbpx = 0;
             for(int i = 0 ; i < gradImg.pixels.size() ; i ++){
-                if(gradImg.pixels[i].exist){
+                if(img.pixels[i].exist){
                     res.direction += gradImg.pixels[i].g;
                     nbpx++;
                 }
@@ -221,16 +290,25 @@ namespace ImgCartoonizer {
 
             res.generate();
 
-            if(nbpx==0){
-                res.startBackgroundColor.r = 1;
-                res.startBackgroundColor.g = 1;
-                res.startBackgroundColor.b = 1;
+            // if(nbpx==0){
+            //     res.startBackgroundColor.r = 1;
+            //     res.startBackgroundColor.g = 0;
+            //     res.startBackgroundColor.b = 0;
 
-                res.endBackgroundColor.r = 1;
-                res.endBackgroundColor.g = 1;
-                res.endBackgroundColor.b = 1;
-                return res;
-            }
+            //     res.endBackgroundColor.r = 1;
+            //     res.endBackgroundColor.g = 0;
+            //     res.endBackgroundColor.b = 0;
+            //     return res;
+            // }else{
+            //     res.startBackgroundColor.r = 0;
+            //     res.startBackgroundColor.g = 0;
+            //     res.startBackgroundColor.b = 1;
+
+            //     res.endBackgroundColor.r = 0;
+            //     res.endBackgroundColor.g = 0;
+            //     res.endBackgroundColor.b = 1;
+            //     return res;
+            // }
 
             int nbpxc1 = 0;
             int nbpxc2 = 0;
@@ -242,19 +320,19 @@ namespace ImgCartoonizer {
             for(int y = 0 ; y < img.height ; y ++){
                 for(int x = 0 ; x < img.width ; x++){
 
-                    if(img.pixels[y*img.height + x].exist){
+                    if(img.pixels[y*img.width + x].exist){
 
                         float distC1 = sqrt(pow(x-res.c1x,2)+pow(y-res.c1y,2));
                         float distC2 = sqrt(pow(x-res.c2x,2)+pow(y-res.c2y,2));
 
-                        if(distC1 < distC2){
+                        if(distC1 < distC2*3){
                             nbpxc1++;
 
                             tmp1.r += img.pixels[y*img.height + x].r;
                             tmp1.g += img.pixels[y*img.height + x].g;
                             tmp1.b += img.pixels[y*img.height + x].b;
 
-                        }else{
+                        }else if(distC1 < distC2*3){
                             nbpxc2++;
 
                             tmp2.r += img.pixels[y*img.height + x].r;
@@ -264,6 +342,7 @@ namespace ImgCartoonizer {
                     }
                 }
             }
+
 
             //std::cout<<"nbpxc1 : "<<nbpxc1<<" nbpxc2 : "<<nbpxc2<<std::endl;
 
@@ -291,12 +370,12 @@ namespace ImgCartoonizer {
 
                 }else{
                     res.startBackgroundColor.r=1;
-                    res.startBackgroundColor.g=0;
-                    res.startBackgroundColor.b=0;
+                    res.startBackgroundColor.g=1;
+                    res.startBackgroundColor.b=1;
 
-                    res.endBackgroundColor.r=0;
+                    res.endBackgroundColor.r=1;
                     res.endBackgroundColor.g=1;
-                    res.endBackgroundColor.b=0;
+                    res.endBackgroundColor.b=1;
                 }
 
             }else{
@@ -335,6 +414,7 @@ namespace ImgCartoonizer {
             auto gradImagettes = splitZonesInImagettes(grad, zones);
 
             int maxZone = zoneIndexMax(zones, l_image.width, l_image.height);
+            std::cout<<"maxZone : "<<maxZone<<std::endl;
 
             for(int i = 0 ; i < maxZone ; i ++){
                 res[i] = extractTextureFromImagette(imagettes[i], gradImagettes[i]);
@@ -351,7 +431,14 @@ namespace ImgCartoonizer {
                     auto pos  = std::make_pair(x,y);
                     auto pix  = res.PixelAt(pos);
                     auto zone = zones[pos];
-                    auto color = textures[zone].getColor(pos);
+                    Color color;
+
+                    if(zone==-1)
+                        color = Color(0,1,0);
+                    if(zone==0)
+                        color = Color(1,1,0);
+                    else
+                        color = textures[zone].getColor(pos);
 
                     pix[0] = color.r;
                     pix[1] = color.g;

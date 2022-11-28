@@ -122,7 +122,7 @@ namespace ImgCartoonizer {
         
         auto sortedImage = std::vector<std::pair<float,std::pair<int,int>>>();
         auto zones = std::map<std::pair<int,int>,int>();
-        //-1 no bassin
+        //-1 no bassin  
         // 0 LPE
         // n>0 bassin n
 
@@ -146,6 +146,9 @@ namespace ImgCartoonizer {
         // std::cout<<"max : "<<maxVal<<std::endl;
         // return res;
 
+        // minVal = 0;
+        // maxVal = 1.0;
+
 
         std::sort(sortedImage.begin(),sortedImage.end());
         
@@ -161,7 +164,7 @@ namespace ImgCartoonizer {
         }
 
 
-        int i = 0;
+        int sortedInd = 0;
         int iteration = 0;
         float stepWidth = (maxVal) / steps;
 
@@ -170,17 +173,22 @@ namespace ImgCartoonizer {
 
             float curentMaxVal = stepWidth*(iteration+1); // on détermine des bornes de l'étage
             
-            while(sortedImage[i].first < curentMaxVal){ //on récupère les pixels de l'étage
-                etage.push_back(sortedImage[i]);
-                i++;
+            while(sortedImage[sortedInd].first < curentMaxVal){ //on récupère les pixels de l'étage
+                etage.push_back(sortedImage[sortedInd]);
+                sortedInd++;
             }
             
             if(iteration != 0)
             for(int i = 0 ; i < etage.size() ; i ++){// on ajoute, dans la liste des pixels traitables, tout les pixels de l'étage qui ont des voisins labélisés
                 auto p = etage[i];
 
-                if(i%10 == 0)
-                affProgressBar(i,0,etage.size(),"Pixels traitables");
+                if(zones[p.second] != -1){
+                    std::cout<<"mauvais étage"<<std::endl;
+                    continue;
+                }
+
+                // if(i%10 == 0)
+                // affProgressBar(i,0,etage.size(),"Pixels traitables");
                 
                 bool ttb = false;
                 for(auto n : fourNei){
@@ -192,6 +200,7 @@ namespace ImgCartoonizer {
                 }
                 if(ttb){
                     traitable.push(p);
+                    in_queue_or_processed[p.second] = true;
                 }
             }
 
@@ -204,18 +213,20 @@ namespace ImgCartoonizer {
                     for(auto p : etage){
                         if(zones[p.second] == -1){
                             zones[p.second] = nextPool++;
+                            in_queue_or_processed[p.second] = true;
                             nbProcessed++;
 
                             for(auto n : fourNei){ // et on rend ses voisins (du même étage) traitables
                                 auto nCord = n+p.second;
+
+                                if(!inImage(nCord, l_image)){
+                                    continue;
+                                }
+                                
                                 float val = *gradient.PixelAt(nCord);
 
 
-                                if(zones[nCord] > 0){
-                                    std::cout<<"gros soucis"<<std::endl;
-                                }
-
-                                if(inImage(nCord, l_image) && val < curentMaxVal && zones[nCord] == -1){
+                                if( val < curentMaxVal && zones[nCord] == -1 && !in_queue_or_processed[nCord]){
                                     traitable.push({val,nCord});
                                     in_queue_or_processed[nCord] = true;
                                 }
@@ -232,6 +243,12 @@ namespace ImgCartoonizer {
 
                     auto current = traitable.front();
                     traitable.pop();
+
+
+                    if(zones[current.second] != -1){
+                        std::cout<<"zones[current.second] != -1"<<std::endl;
+                        //continue;
+                    }
                     
 
                     //libélé le pixel //ajouter tout les voisins du même étage, non libélés dans la file
@@ -260,7 +277,21 @@ namespace ImgCartoonizer {
                             } 
                         }
                     }
-                    zones[current.second] = (state == -1 ? nextPool++ : state);
+
+
+                    if(zones[current.second] != -1){
+                        std::cout<<"zones[current.second] != -1"<<std::endl;
+                        //continue;
+                    }else{
+                        if(state == -1){
+                            zones[current.second] = nextPool++;
+                        }else{
+                            zones[current.second] = state;
+                        }
+                    }
+
+                    in_queue_or_processed[current.second] = true;
+                    
                     nbProcessed++;
                 }
                 
@@ -268,7 +299,7 @@ namespace ImgCartoonizer {
             iteration++;
         }
 
-        nextPool++;
+        //nextPool++;
 
         for(auto z : sortedImage){
             if(zones[z.second] == -1){
@@ -285,14 +316,41 @@ namespace ImgCartoonizer {
 
     int zoneIndexMax(std::map<std::pair<int,int>,int> zones, int width, int height){
         int max = 0;
-        for(int y = 0 ; y < width ; y ++){
-            for(int x = 0 ; x < height ; x++){
+        for(int y = 0 ; y < height ; y ++){
+            for(int x = 0 ; x < width ; x++){
                 if(zones[std::make_pair(x,y)] > max){
                     max = zones[std::make_pair(x,y)];
                 }
             }
         }
         return max;
+    }
+
+
+    std::vector<bool> printUnUsedZones(std::map<std::pair<int,int>,int> zones, int width, int height){
+        
+        
+
+        int max = zoneIndexMax(zones, width, height);
+        auto usedZones = std::vector<bool>(max,false);
+
+        for(int y = 0 ; y < height ; y++){
+            for(int x = 0 ; x < width ; x++){
+                auto z = zones[{x,y}];
+                usedZones[z] = true;
+            }
+        }
+
+        std::cout<<"Début printUnUsedZones"<<std::endl;
+
+        for(int i = 0 ; i < max ; i ++){
+            if(!usedZones[i]){
+                std::cout<<"Zone inutilisée : "<<i<<std::endl;
+            }
+        }
+
+        std::cout<<"Fin printUnUsedZones"<<std::endl;
+        return usedZones;
     }
 
     Image fromZonesToImage(std::map<std::pair<int,int>,int> zones, int width, int height){

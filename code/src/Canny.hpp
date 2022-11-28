@@ -55,6 +55,20 @@ namespace ImgCartoonizer {
         return gradient;
     }
 
+    Image gradientNorm(Image l_image){
+        auto fullGrad = gradient(l_image);
+        auto res = ImgCartoonizer::Image::Create(l_image.width, l_image.height, 1);
+
+        int size = fullGrad.width*fullGrad.height;
+
+        for(int i = 0 ; i < size ; i ++){
+            res.data[i] = fullGrad.data[2*i];
+        }
+
+        return res;
+    }
+    
+
     Image contour(Image l_image){
 
         auto gradient = ImgCartoonizer::gradient(l_image);
