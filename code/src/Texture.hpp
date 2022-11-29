@@ -110,16 +110,16 @@ namespace ImgCartoonizer {
 
             float d = sqrt(pow(projX-c1x,2)+pow(projY-c1y,2));
             
-            /*
+            
             float distC1 = sqrt(pow(x-c1x,2)+pow(y-c1y,2));
             float distC2 = sqrt(pow(x-c2x,2)+pow(y-c2y,2));
-            if(distC1 < 5.0){
-                return Color(0,0,0);
-            }
-            if(distC2 < 5.0){
-                return Color(1,1,1);
-            }
-            */
+            // if(distC1 < 5.0){
+            //     return Color(0,0,0);
+            // }
+            // if(distC2 < 5.0){
+            //     return Color(1,1,1);
+            // }
+            
 
             return Color::interpolate(startBackgroundColor, endBackgroundColor, d, sqrt(vd)-d);
         }
@@ -192,7 +192,7 @@ namespace ImgCartoonizer {
             }
             
 
-            for(int y = 0 ; y < l_image.width ; y++){ // Trouver le min et le max de chaque zone
+            for(int y = 0 ; y < l_image.height ; y++){ // Trouver le min et le max de chaque zone
                 for(int x = 0 ; x < l_image.width ; x++){
                     int z = zones[std::make_pair(x,y)];
 
@@ -211,8 +211,12 @@ namespace ImgCartoonizer {
                 imagettes[i].width  = imagettes[i].endX - imagettes[i].startX+1;
                 imagettes[i].height = imagettes[i].endY - imagettes[i].startY+1;
 
-                if(imagettes[i].width < 0 || imagettes[i].height < 0){
-                    std::cout<<"Une des dimensions est négative w : "<<imagettes[i].width<<" h : "<<imagettes[i].height<<std::endl;
+                if(imagettes[i].width <= 0 || imagettes[i].height <= 0){
+                    std::cout<<"Une des dimensions est trop petite"<<std::endl
+                    <<"w : "<<imagettes[i].width<<" h : "<<imagettes[i].height<<std::endl
+                    <<"endX : "<<imagettes[i].endX<<" startX : "<<imagettes[i].startX<<std::endl
+                    <<"endY : "<<imagettes[i].endY<<" startY : "<<imagettes[i].startY<<std::endl;
+
                     std::cout<<"Zone : "<<i<<std::endl;
                 }
             }
@@ -221,6 +225,7 @@ namespace ImgCartoonizer {
             //remplir les imagettes avec les pixels
 
             for(int i = 0 ; i < maxZone ; i ++){
+
                 if(!usedZones[i]){
                     continue;
                     std::cout<<"skipping"<<std::endl;
@@ -234,9 +239,7 @@ namespace ImgCartoonizer {
                     continue;
                 }
 
-                std::cout<<"Je suis là w : "<<img.width<<" h : "<<img.height<<std::endl;
                 img.pixels.resize(img.width*img.height);
-                std::cout<<"Je pas là"<<std::endl;
 
                 for(int y = img.startY ; y <= img.endY ; y ++){
                     for(int x = img.startX ; x <= img.endX ; x ++){
@@ -266,6 +269,10 @@ namespace ImgCartoonizer {
             return imagettes;
         }
 
+        static bool compareColorFloatPair(std::pair<float, Color> a, std::pair<float, Color> b){
+            return(a.first < b.first);
+        }
+
         static Texture extractTextureFromImagette(Imagette & img, Imagette & gradImg){
             Texture res;
 
@@ -278,45 +285,38 @@ namespace ImgCartoonizer {
             int nbpx = 0;
             for(int i = 0 ; i < gradImg.pixels.size() ; i ++){
                 if(img.pixels[i].exist){
+                    if(isnan(gradImg.pixels[i].g)){
+                        std::cout<<"OULA : "<<i<<std::endl;
+                    }
                     res.direction += gradImg.pixels[i].g;
                     nbpx++;
                 }
             }
-            //std::cout<<"nb px : "<<nbpx<<std::endl;
 
-            
+
+            auto tmpdir = res.direction;
 
             res.direction /= nbpx;
 
+
+            if(isnan(res.direction)){
+                res.direction = 0.0;
+                std::cout<<"tmpdir : "<<tmpdir<<std::endl;
+                std::cout<<"nb px  : "<<nbpx<<std::endl;
+            }
+
             res.generate();
-
-            // if(nbpx==0){
-            //     res.startBackgroundColor.r = 1;
-            //     res.startBackgroundColor.g = 0;
-            //     res.startBackgroundColor.b = 0;
-
-            //     res.endBackgroundColor.r = 1;
-            //     res.endBackgroundColor.g = 0;
-            //     res.endBackgroundColor.b = 0;
-            //     return res;
-            // }else{
-            //     res.startBackgroundColor.r = 0;
-            //     res.startBackgroundColor.g = 0;
-            //     res.startBackgroundColor.b = 1;
-
-            //     res.endBackgroundColor.r = 0;
-            //     res.endBackgroundColor.g = 0;
-            //     res.endBackgroundColor.b = 1;
-            //     return res;
-            // }
 
             int nbpxc1 = 0;
             int nbpxc2 = 0;
 
             Color tmp1;
             Color tmp2;
+        
+            auto sortedColors = std::vector<std::pair<float,Color>>();
 
-            
+            Color avgC = {0,0,0};
+
             for(int y = 0 ; y < img.height ; y ++){
                 for(int x = 0 ; x < img.width ; x++){
 
@@ -325,83 +325,55 @@ namespace ImgCartoonizer {
                         float distC1 = sqrt(pow(x-res.c1x,2)+pow(y-res.c1y,2));
                         float distC2 = sqrt(pow(x-res.c2x,2)+pow(y-res.c2y,2));
 
-                        if(distC1 < distC2*3){
-                            nbpxc1++;
+                        sortedColors.push_back(std::make_pair(distC1-distC2, img.pixels[y*img.width + x] ));
 
-                            tmp1.r += img.pixels[y*img.height + x].r;
-                            tmp1.g += img.pixels[y*img.height + x].g;
-                            tmp1.b += img.pixels[y*img.height + x].b;
-
-                        }else if(distC1 < distC2*3){
-                            nbpxc2++;
-
-                            tmp2.r += img.pixels[y*img.height + x].r;
-                            tmp2.g += img.pixels[y*img.height + x].g;
-                            tmp2.b += img.pixels[y*img.height + x].b;                            
-                        }
+                        avgC.r += img.pixels[y*img.width + x].r;
+                        avgC.g += img.pixels[y*img.width + x].g;
+                        avgC.b += img.pixels[y*img.width + x].b;
                     }
                 }
             }
 
+            avgC.r /= sortedColors.size();
+            avgC.g /= sortedColors.size();
+            avgC.b /= sortedColors.size();                        
 
-            //std::cout<<"nbpxc1 : "<<nbpxc1<<" nbpxc2 : "<<nbpxc2<<std::endl;
+            std::sort(sortedColors.begin(),sortedColors.end(),compareColorFloatPair);
 
-            // res.startBackgroundColor.r = (tmp1.r + tmp2.r)/(nbpxc1+nbpxc2);
-            // res.startBackgroundColor.g = (tmp1.g + tmp2.g)/(nbpxc1+nbpxc2);
-            // res.startBackgroundColor.b = (tmp1.b + tmp2.b)/(nbpxc1+nbpxc2);
+            float qttColorGrad = 0.1;
+            int nbPix = std::max(qttColorGrad*sortedColors.size(),1.0f);
 
-            // res.endBackgroundColor.r = (tmp1.r + tmp2.r)/(nbpxc1+nbpxc2);
-            // res.endBackgroundColor.g = (tmp1.g + tmp2.g)/(nbpxc1+nbpxc2);
-            // res.endBackgroundColor.b = (tmp1.b + tmp2.b)/(nbpxc1+nbpxc2);
+            for(int i = 0 ; i < nbPix ; i ++){
+                tmp1.r += sortedColors[i].second.r;
+                tmp1.g += sortedColors[i].second.g;
+                tmp1.b += sortedColors[i].second.b;
 
-            //return res;
+                tmp2.r += sortedColors[sortedColors.size()-i-1].second.r;
+                tmp2.g += sortedColors[sortedColors.size()-i-1].second.g;
+                tmp2.b += sortedColors[sortedColors.size()-i-1].second.b;
+            }
 
-            if(nbpxc1 == 0 || nbpxc2 == 0){
 
-                if(nbpxc1 + nbpxc2 > 0){
 
-                    res.startBackgroundColor.r = (tmp1.r + tmp2.r)/(nbpxc1+nbpxc2);
-                    res.startBackgroundColor.g = (tmp1.g + tmp2.g)/(nbpxc1+nbpxc2);
-                    res.startBackgroundColor.b = (tmp1.b + tmp2.b)/(nbpxc1+nbpxc2);
+            if(sortedColors.size() == 0){
 
-                    res.endBackgroundColor.r = (tmp1.r + tmp2.r)/(nbpxc1+nbpxc2);
-                    res.endBackgroundColor.g = (tmp1.g + tmp2.g)/(nbpxc1+nbpxc2);
-                    res.endBackgroundColor.b = (tmp1.b + tmp2.b)/(nbpxc1+nbpxc2);
-
-                }else{
-                    res.startBackgroundColor.r=1;
-                    res.startBackgroundColor.g=1;
-                    res.startBackgroundColor.b=1;
-
-                    res.endBackgroundColor.r=1;
-                    res.endBackgroundColor.g=1;
-                    res.endBackgroundColor.b=1;
-                }
+                res.startBackgroundColor = {1,1,1};
+                res.endBackgroundColor = {1,1,1};
 
             }else{
 
-                tmp1.r /= nbpxc1;
-                tmp1.g /= nbpxc1;
-                tmp1.b /= nbpxc1;
+                tmp1.r /= nbPix;
+                tmp1.g /= nbPix;
+                tmp1.b /= nbPix;
 
-                tmp2.r /= nbpxc2;
-                tmp2.g /= nbpxc2;
-                tmp2.b /= nbpxc2;
+                tmp2.r /= nbPix;
+                tmp2.g /= nbPix;
+                tmp2.b /= nbPix;
 
                 res.startBackgroundColor = tmp2;
                 res.endBackgroundColor   = tmp1;
             }
 
-
-            // res.startBackgroundColor.r = (float)rand()/(float)(RAND_MAX);
-            // res.startBackgroundColor.g = (float)rand()/(float)(RAND_MAX);
-            // res.startBackgroundColor.b = (float)rand()/(float)(RAND_MAX);
-
-            // res.endBackgroundColor.r   = (float)rand()/(float)(RAND_MAX);
-            // res.endBackgroundColor.g   = (float)rand()/(float)(RAND_MAX);
-            // res.endBackgroundColor.b   = (float)rand()/(float)(RAND_MAX);
-
-            
             return res;
         }
 
@@ -414,10 +386,17 @@ namespace ImgCartoonizer {
             auto gradImagettes = splitZonesInImagettes(grad, zones);
 
             int maxZone = zoneIndexMax(zones, l_image.width, l_image.height);
-            std::cout<<"maxZone : "<<maxZone<<std::endl;
 
             for(int i = 0 ; i < maxZone ; i ++){
+
+                if(i%10==0)
+                affProgressBar(i,0,maxZone,"Extraction des textures");
+
                 res[i] = extractTextureFromImagette(imagettes[i], gradImagettes[i]);
+                //res[i] = Texture();
+
+                // res[i].startBackgroundColor = {1,0,0};
+                // res[i].endBackgroundColor = {0,0,1};
             }
 
             return res;

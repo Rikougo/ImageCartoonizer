@@ -173,7 +173,7 @@ namespace ImgCartoonizer {
 
             float curentMaxVal = stepWidth*(iteration+1); // on détermine des bornes de l'étage
             
-            while(sortedImage[sortedInd].first < curentMaxVal){ //on récupère les pixels de l'étage
+            while(sortedInd <sortedImage.size() && sortedImage[sortedInd].first < curentMaxVal){ //on récupère les pixels de l'étage
                 etage.push_back(sortedImage[sortedInd]);
                 sortedInd++;
             }
@@ -323,14 +323,12 @@ namespace ImgCartoonizer {
                 }
             }
         }
-        return max;
+        return max +1;
     }
 
 
     std::vector<bool> printUnUsedZones(std::map<std::pair<int,int>,int> zones, int width, int height){
         
-        
-
         int max = zoneIndexMax(zones, width, height);
         auto usedZones = std::vector<bool>(max,false);
 
@@ -340,16 +338,6 @@ namespace ImgCartoonizer {
                 usedZones[z] = true;
             }
         }
-
-        std::cout<<"Début printUnUsedZones"<<std::endl;
-
-        for(int i = 0 ; i < max ; i ++){
-            if(!usedZones[i]){
-                std::cout<<"Zone inutilisée : "<<i<<std::endl;
-            }
-        }
-
-        std::cout<<"Fin printUnUsedZones"<<std::endl;
         return usedZones;
     }
 

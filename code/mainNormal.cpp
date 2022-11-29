@@ -7,46 +7,46 @@
 #include <featureExtraction.hpp>
 #include <Texture.hpp>
 
-int main(int argc, char *argv[]) {
-    auto l_image = ImgCartoonizer::Image::Load(argv[1]);
+int main() {
+    auto l_image = ImgCartoonizer::Image::Load("./images/petitMathieu.png");
 
     //ImgCartoonizer::Image::Save("results/mathieuGradient.png", ImgCartoonizer::gradientNorm(l_image));
     //ImgCartoonizer::Image::Save("results/mathieuCanny.png", ImgCartoonizer::cannyFilter(l_image));
-
     //auto canny = cannyFilter(l_image);
 
-    auto zones = ImgCartoonizer::LPE(l_image,50);
+    auto zones = ImgCartoonizer::LPE(l_image,25);
 
     //ImgCartoonizer::printUnUsedZones(zones, l_image.width, l_image.height );
 
     //return 0;
 
-    auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
-    //auto textures = ImgCartoonizer::Texture::extractTextures(l_image, zones);
 
-    //auto resImgTex  = ImgCartoonizer::Texture::generateFromTextures(textures, zones, l_image.width, l_image.height);
+    //flat
+    auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
     auto resImgFeat = ImgCartoonizer::Feature::generateFromFeatures(features, zones, l_image.width, l_image.height);
 
-    //ImgCartoonizer::Feature::setBorders(resImgTex,  features, zones, l_image.width, l_image.height, 0, 0.3);
-
-    //ImgCartoonizer::Image::Save("results/mathieuTex.png", resImgTex);
-    //ImgCartoonizer::Image::Save("results/mathieuZones.png", ImgCartoonizer::fromZonesToImage(zones,l_image.width,l_image.height));
-
-
     ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 4, 0.3);
-    ImgCartoonizer::Image::Save(argv[2], resImgFeat);
+    ImgCartoonizer::Image::Save("results/mathieuFlat.png", resImgFeat);
 
-    //ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 2, 0.3);
-    //ImgCartoonizer::Image::Save("results/mathieuFlat2.png", resImgFeat);
+    ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 2, 0.3);
+    ImgCartoonizer::Image::Save("results/mathieuFlat2.png", resImgFeat);
     
 
-    // auto imagettes =  ImgCartoonizer::Texture::splitZonesInImagettes(l_image,zones);
+    //texture
+    auto textures = ImgCartoonizer::Texture::extractTextures(l_image, zones);
+    auto resImgTex  = ImgCartoonizer::Texture::generateFromTextures(textures, zones, l_image.width, l_image.height);
+    ImgCartoonizer::Feature::setBorders(resImgTex,  features, zones, l_image.width, l_image.height, 4, 0.3);
+    ImgCartoonizer::Image::Save("results/mathieuTex.png", resImgTex);
 
-    // ImgCartoonizer::Image::Save("results/mathieuMergeFromImagettes.png", ImgCartoonizer::Texture::mergeFromImagettes(imagettes, zones, l_image.width, l_image.height));
 
+    //zones
+    ImgCartoonizer::Image::Save("results/mathieuZones.png", ImgCartoonizer::fromZonesToImage(zones,l_image.width,l_image.height));
 
+    //imagettes (debug)
+    auto imagettes =  ImgCartoonizer::Texture::splitZonesInImagettes(l_image,zones);
+    ImgCartoonizer::Image::Save("results/mathieuMergeFromImagettes.png", ImgCartoonizer::Texture::mergeFromImagettes(imagettes, zones, l_image.width, l_image.height));
 
-
+    
 
     
     {
