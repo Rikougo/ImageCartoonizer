@@ -7,46 +7,68 @@
 #include <featureExtraction.hpp>
 #include <Texture.hpp>
 
-int main(int argc, char *argv[]) {
-    auto l_image = ImgCartoonizer::Image::Load(argv[1]);
+int main(int argc, char * argv[]) {
 
-    //ImgCartoonizer::Image::Save("results/mathieuGradient.png", ImgCartoonizer::gradientNorm(l_image));
-    //ImgCartoonizer::Image::Save("results/mathieuCanny.png", ImgCartoonizer::cannyFilter(l_image));
+    if(true){
+        auto l_image = ImgCartoonizer::Image::Load(argv[1]);
+        auto zones = ImgCartoonizer::LPE(l_image,25);
+        auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
+        auto resImgFeat = ImgCartoonizer::Feature::generateFromFeatures(features, zones, l_image.width, l_image.height);
+        
+        ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 4, 0.3);
+        ImgCartoonizer::Image::Save(argv[2], resImgFeat);
 
+        return 0;
+    }
+
+
+    auto l_image = ImgCartoonizer::Image::Load("./images/aurora.png");
+
+    //ImgCartoonizer::Image::Save("results/auroraGradient.png", ImgCartoonizer::gradientNorm(l_image));
+    //ImgCartoonizer::Image::Save("results/auroraCanny.png", ImgCartoonizer::cannyFilter(l_image));
     //auto canny = cannyFilter(l_image);
 
-    auto zones = ImgCartoonizer::LPE(l_image,50);
+    auto zones = ImgCartoonizer::LPE(l_image,25);
 
     //ImgCartoonizer::printUnUsedZones(zones, l_image.width, l_image.height );
 
     //return 0;
 
+    //flat
     auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
-    //auto textures = ImgCartoonizer::Texture::extractTextures(l_image, zones);
-
-    //auto resImgTex  = ImgCartoonizer::Texture::generateFromTextures(textures, zones, l_image.width, l_image.height);
     auto resImgFeat = ImgCartoonizer::Feature::generateFromFeatures(features, zones, l_image.width, l_image.height);
-
-    //ImgCartoonizer::Feature::setBorders(resImgTex,  features, zones, l_image.width, l_image.height, 0, 0.3);
-
-    //ImgCartoonizer::Image::Save("results/mathieuTex.png", resImgTex);
-    //ImgCartoonizer::Image::Save("results/mathieuZones.png", ImgCartoonizer::fromZonesToImage(zones,l_image.width,l_image.height));
-
+    auto resImgFeat2 = resImgFeat;
 
     ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 4, 0.3);
-    ImgCartoonizer::Image::Save(argv[2], resImgFeat);
+    ImgCartoonizer::Image::Save("results/auroraFlat.png", resImgFeat);
 
-    //ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 2, 0.3);
-    //ImgCartoonizer::Image::Save("results/mathieuFlat2.png", resImgFeat);
+    ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 2, 0.3);
+    ImgCartoonizer::Image::Save("results/auroraFlat2.png", resImgFeat);
     
 
+    //texture
+    auto textures = ImgCartoonizer::Texture::extractTextures(l_image, zones);
+    auto resImgTex  = ImgCartoonizer::Texture::generateGradFromTextures(textures, zones, l_image.width, l_image.height);
+    auto resImgTexTram  = ImgCartoonizer::Texture::generateTramFromTextures(textures, zones, l_image.width, l_image.height);
+
+    ImgCartoonizer::Feature::setBorders(resImgTex,  features, zones, l_image.width, l_image.height, 4, 0.3);
+    ImgCartoonizer::Image::Save("results/auroraTex.png", resImgTex);
+
+    ImgCartoonizer::Feature::setBorders(resImgTexTram, features, zones, l_image.width, l_image.height, 2, 0.3);
+    ImgCartoonizer::Image::Save("results/auroraTexTramflat.png", resImgTexTram);
+
+    ImgCartoonizer::Feature::setBorders(resImgTexTram,  features, zones, l_image.width, l_image.height, 4, 0.3);
+    ImgCartoonizer::Image::Save("results/auroraTexTram.png", resImgTexTram);
+
+
+    //zones
+    //ImgCartoonizer::Image::Save("results/auroraZones.png", ImgCartoonizer::fromZonesToImage(zones,l_image.width,l_image.height));
+
+    //imagettes (debug)
     // auto imagettes =  ImgCartoonizer::Texture::splitZonesInImagettes(l_image,zones);
+    // ImgCartoonizer::Image::Save("results/potichatMergeFromImagettes.png", ImgCartoonizer::Texture::mergeFromImagettes(imagettes, zones, l_image.width, l_image.height));
 
-    // ImgCartoonizer::Image::Save("results/mathieuMergeFromImagettes.png", ImgCartoonizer::Texture::mergeFromImagettes(imagettes, zones, l_image.width, l_image.height));
-
-
-
-
+    
 
     
     {

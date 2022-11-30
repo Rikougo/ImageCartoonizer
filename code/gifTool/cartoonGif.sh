@@ -1,4 +1,5 @@
 splitImgFiles=".GifImg"
+splitImgFilesNoT=".GifImgNoAlpha"
 cartoonedFiles=".cartoonedGifImg"
 
 cartooningCommand="./singleImgCartoon"
@@ -6,6 +7,7 @@ cartooningCommand="./singleImgCartoon"
 #create folders
 mkdir $splitImgFiles
 mkdir $cartoonedFiles
+mkdir $splitImgFilesNoT
 
 #Get git delay
 str=$(identify -verbose $1 | grep Delay)
@@ -24,9 +26,16 @@ let i=0
 let pids
 for f in $FILES
 do
-    $cartooningCommand $f $cartoonedFiles${f#$splitImgFiles} &
+    ffmpeg -i $f -filter_complex "color=black,format=rgb24[c];[c][0]scale2ref[c][i];[c][i]overlay=format=auto:shortest=1,setsar=1" $splitImgFilesNoT/${f#$splitImgFiles}
+    $cartooningCommand $splitImgFilesNoT/${f#$splitImgFiles} $cartoonedFiles${f#$splitImgFiles} &
     pids[${i}]=$!
     let i=i+1
+
+    if [ $(expr $i % 16) == "0" ]; then
+      for pid in ${pids[*]}; do
+        wait $pid
+      done
+    fi
 done
 
 #wait cartoonisation
@@ -41,3 +50,4 @@ cd ..
 
 rm -rf $splitImgFiles
 rm -rf $cartoonedFiles
+rm -rf $splitImgFilesNoT

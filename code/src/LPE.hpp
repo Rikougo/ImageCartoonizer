@@ -204,36 +204,51 @@ namespace ImgCartoonizer {
                 }
             }
 
+            auto pasTraitable = std::queue<std::pair<float,std::pair<int,int>>>();
+
 
             int nbProcessed = 0;
 
             while(nbProcessed<etage.size()){ // tant qu'il reste des pixels non taités à l'étage on continue
 
                 if(traitable.size()==0){ // s'il n'y a plus de pixels traitable, on creer un nouveau bassin
-                    for(auto p : etage){
-                        if(zones[p.second] == -1){
-                            zones[p.second] = nextPool++;
-                            in_queue_or_processed[p.second] = true;
-                            nbProcessed++;
 
-                            for(auto n : fourNei){ // et on rend ses voisins (du même étage) traitables
-                                auto nCord = n+p.second;
+                    if(pasTraitable.size() == 0){
+                        for(auto p : etage){
+                           if(zones[p.second] == -1){
+                              pasTraitable.push(p); 
+                           }
+                       } 
+                    }
 
-                                if(!inImage(nCord, l_image)){
-                                    continue;
-                                }
-                                
-                                float val = *gradient.PixelAt(nCord);
+                    std::pair<float,std::pair<int,int>> p;
+                    do{//for(auto p : etage){
+                        p = pasTraitable.front();
+                        pasTraitable.pop();
+                    }while(zones[p.second] != -1);
 
+                    if(zones[p.second] == -1){
+                        zones[p.second] = nextPool++;
+                        in_queue_or_processed[p.second] = true;
+                        nbProcessed++;
 
-                                if( val < curentMaxVal && zones[nCord] == -1 && !in_queue_or_processed[nCord]){
-                                    traitable.push({val,nCord});
-                                    in_queue_or_processed[nCord] = true;
-                                }
+                        for(auto n : fourNei){ // et on rend ses voisins (du même étage) traitables
+                            auto nCord = n+p.second;
+
+                            if(!inImage(nCord, l_image)){
+                                continue;
                             }
-                            break;
+                            
+                            float val = *gradient.PixelAt(nCord);
+
+
+                            if( val < curentMaxVal && zones[nCord] == -1 && !in_queue_or_processed[nCord]){
+                                traitable.push({val,nCord});
+                                in_queue_or_processed[nCord] = true;
+                            }
                         }
-                    }  
+                    }
+                      
                 }
 
                 while(traitable.size()>0){ // On traite tout les pixels traitables

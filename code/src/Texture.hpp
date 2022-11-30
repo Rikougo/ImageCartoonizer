@@ -1,3 +1,48 @@
+std::pair<float,float> operator+(const std::pair<float,float> &a, const std::pair<float,float> &b)
+{
+    return std::make_pair(a.first+b.first,a.second+b.second);
+}
+
+std::pair<float,float> operator-(const std::pair<float,float> &a, const std::pair<float,float> &b)
+{
+    return std::make_pair(a.first-b.first,a.second-b.second);
+}
+
+std::pair<float,float> operator*(const std::pair<float,float> &a, const float &b)
+{
+    return std::make_pair(a.first*b,a.second*b);
+}
+
+std::pair<float,float> operator*(const float &b,const std::pair<float,float> &a)
+{
+    return std::make_pair(a.first*b,a.second*b);
+}
+
+std::pair<float,float> operator/(const std::pair<float,float> &a, const float &b)
+{
+    float inv = 1.0/b;
+    return std::make_pair(a.first*inv,a.second*inv);
+}
+
+std::pair<float,float> operator/(const float &b,const std::pair<float,float> &a)
+{
+    float inv = 1.0/b;
+    return std::make_pair(a.first*inv,a.second*inv);
+}
+
+float sqlen(const std::pair<float,float> &a){
+    return a.first*a.first + a.second*a.second;
+}
+
+float len(const std::pair<float,float> &a){
+    return(sqrt(sqlen(a)));
+}
+
+std::pair<float,float> normalize(const std::pair<float,float> &a){
+    return(a/len(a));
+}
+
+
 namespace ImgCartoonizer {  
 
     struct Imagette{
@@ -28,6 +73,8 @@ namespace ImgCartoonizer {
         Color startBackgroundColor;
         Color endBackgroundColor;
 
+        Color avgColor;
+
         ///////
 
         int c1x;
@@ -37,6 +84,8 @@ namespace ImgCartoonizer {
         int c2y;
 
         float direction;
+
+        std::vector<std::pair<std::pair<int,int>,float>> dots;
 
 
         Texture(){
@@ -55,6 +104,8 @@ namespace ImgCartoonizer {
 
             startBackgroundColor = Color(1,0,0);
             endBackgroundColor   = Color(0,0,1);
+
+            avgColor = Color(1,1,0);
         }
 
         void generate(){
@@ -86,7 +137,43 @@ namespace ImgCartoonizer {
             if(c2y < 0) c2y = 0;
             if(c2y > sizeY) c2y = sizeY;
 
-        }   
+            generateDots();
+        }       
+
+        bool inImagette(std::pair<float,float> p){
+            return(p.first >= startX && p.first < startX + sizeX && p.second >= startY && p.second < startY + sizeY );
+        }
+
+        void generateDots(){
+
+            double sizeMinDot = 3.0;
+            double lenMinDot = 5.0;
+
+            dots = std::vector<std::pair<std::pair<int,int>,float>>();
+
+            float len = std::max(lenMinDot,std::min(sizeX,sizeY) * 0.1);
+            std::pair<float,float> c1 = std::make_pair(c1x+startX,c1y+startY);
+            std::pair<float,float> c2 = std::make_pair(c2x+startX,c2y+startY);
+
+            auto forward = normalize(c2-c1) * len;
+            auto left = std::make_pair(-1*forward.second,forward.first);
+
+            auto tmp = c1;
+
+            int i = 1;
+            while(inImagette(tmp)){
+                while(inImagette(tmp)){
+                    tmp = tmp + left;
+                    dots.push_back({tmp,std::max(sizeMinDot,(float)len*0.3)});
+                }
+                do{
+                    tmp = tmp - left;
+                    dots.push_back({tmp,std::max(sizeMinDot,(float)len*0.3)});
+                }while(inImagette(tmp));
+
+                tmp = c1 + forward*i++;
+            }            
+        }
 
         Color getColor(int inx, int iny){
 
@@ -124,8 +211,21 @@ namespace ImgCartoonizer {
             return Color::interpolate(startBackgroundColor, endBackgroundColor, d, sqrt(vd)-d);
         }
 
+        Color getTramColor(int inx, int iny){
+            for(auto dot : dots){
+                if(len(dot.first - std::make_pair((float)inx,(float)iny)) < dot.second){
+                    return dotColor;
+                }
+            }
+            return avgColor;
+        }
+
         Color getColor(std::pair<int,int> pos){
             return getColor(pos.first,pos.second);
+        }
+
+        Color getTramColor(std::pair<int,int> pos){
+            return getTramColor(pos.first,pos.second);
         }
 
         static Image mergeFromImagettes(std::map<int,Imagette> imagettes, std::map<std::pair<int,int>,int> & zones, int width, int height){
@@ -287,9 +387,10 @@ namespace ImgCartoonizer {
                 if(img.pixels[i].exist){
                     if(isnan(gradImg.pixels[i].g)){
                         std::cout<<"OULA : "<<i<<std::endl;
+                    }else{
+                        res.direction += gradImg.pixels[i].g;
+                        nbpx++;
                     }
-                    res.direction += gradImg.pixels[i].g;
-                    nbpx++;
                 }
             }
 
@@ -336,7 +437,13 @@ namespace ImgCartoonizer {
 
             avgC.r /= sortedColors.size();
             avgC.g /= sortedColors.size();
-            avgC.b /= sortedColors.size();                        
+            avgC.b /= sortedColors.size();
+
+            res.avgColor = avgC;
+
+            res.dotColor.r = avgC.r * 0.5;
+            res.dotColor.g = avgC.g * 0.5;
+            res.dotColor.b = avgC.b * 0.5;
 
             std::sort(sortedColors.begin(),sortedColors.end(),compareColorFloatPair);
 
@@ -402,7 +509,7 @@ namespace ImgCartoonizer {
             return res;
         }
 
-        static Image generateFromTextures(std::map<int, Texture> textures, std::map<std::pair<int,int>,int> zones, int width, int height){
+        static Image generateGradFromTextures(std::map<int, Texture> textures, std::map<std::pair<int,int>,int> zones, int width, int height){
             Image res = Image::Create(width, height, 3);
 
             for(int y = 0 ; y < height ; y ++){
@@ -425,7 +532,31 @@ namespace ImgCartoonizer {
                 }
             }
 
+            return res;
+        }
 
+        static Image generateTramFromTextures(std::map<int, Texture> textures, std::map<std::pair<int,int>,int> zones, int width, int height){
+            Image res = Image::Create(width, height, 3);
+
+            for(int y = 0 ; y < height ; y ++){
+                for(int x = 0 ; x < width ; x ++){
+                    auto pos  = std::make_pair(x,y);
+                    auto pix  = res.PixelAt(pos);
+                    auto zone = zones[pos];
+                    Color color;
+
+                    if(zone==-1)
+                        color = Color(0,1,0);
+                    if(zone==0)
+                        color = Color(1,1,0);
+                    else
+                        color = textures[zone].getTramColor(pos);
+
+                    pix[0] = color.r;
+                    pix[1] = color.g;
+                    pix[2] = color.b;
+                }
+            }
 
             return res;
         }
