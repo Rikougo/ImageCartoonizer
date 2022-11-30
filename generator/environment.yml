@@ -1,6 +1,14 @@
 name: cartoon-generator
 dependencies:
+  - python=3.7.*
   - pip
   - pip:
     - openai==0.25.*
     - imageai==2.1.*
+    - tensorflow==2.4.*
+    - numpy==1.19.*
+    - pillow==7.0.*
+    - scipy==1.4.*
+    - h5py==2.10.*
+    - matplotlib==3.3.*
+    - keras-resnet==0.2.*
