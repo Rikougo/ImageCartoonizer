@@ -1,4 +1,5 @@
 #include <iostream>
+#include <exception>
 
 #include <Image.hpp>
 #include <Convolution.hpp>
@@ -6,6 +7,8 @@
 #include <LPE.hpp>
 #include <featureExtraction.hpp>
 #include <Texture.hpp>
+
+#define DEBUG 0
 
 int main(int argc, char * argv[]) {
     if (argc < 3) {

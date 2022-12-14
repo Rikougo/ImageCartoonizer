@@ -500,8 +500,10 @@ namespace ImgCartoonizer {
 
             for(int i = 0 ; i < maxZone ; i ++){
 
+#if DEBUG
                 if(i%10==0)
-                affProgressBar(i,0,maxZone,"Extraction des textures");
+                    affProgressBar(i,0,maxZone,"Extraction des textures");
+#endif
 
                 res[i] = extractTextureFromImagette(imagettes[i], gradImagettes[i]);
                 //res[i] = Texture();

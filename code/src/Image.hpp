@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include <vector>
+#include <exception>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stbi_image.h>
@@ -247,7 +248,7 @@ namespace ImgCartoonizer {
                         0
                         ) == 1;
             } else {
-                throw std::exception("Unsupported file extension");
+                throw std::runtime_error("Unsupported file extension");
             }
 
             delete[] tmpData;

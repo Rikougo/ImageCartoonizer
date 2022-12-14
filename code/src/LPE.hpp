@@ -253,9 +253,10 @@ namespace ImgCartoonizer {
 
                 while(traitable.size()>0){ // On traite tout les pixels traitables
 
+#if DEBUG
                     if(nbProcessed%10==0)
-                    affProgressBar(iteration,0,steps,nbProcessed,0,etage.size(),"Étage","Pixels de l'étage");
-
+                        affProgressBar(iteration,0,steps,nbProcessed,0,etage.size(),"Étage","Pixels de l'étage");
+#endif
                     auto current = traitable.front();
                     traitable.pop();
 
