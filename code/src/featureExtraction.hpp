@@ -1,5 +1,14 @@
 namespace ImgCartoonizer {  
 
+    enum BorderType {
+        BorderType_Black,
+        BorderType_White,
+        BorderType_Average,
+        BorderType_InvAverage,
+        BorderType_LessAverage,
+        BorderType_MoreAverage
+    };
+
     struct Feature {
         int nbPixel;
 
@@ -52,7 +61,9 @@ namespace ImgCartoonizer {
             return res;
         }
 
-        static void setBorders(Image & l_image, std::map<int,Feature> features, std::map<std::pair<int,int>,int> zones, int width, int height, int mode = 0, float contraste = 0.5){
+        static void setBorders(Image & l_image, std::map<int,Feature> features,
+                               std::map<std::pair<int,int>,int> zones, int width, int height,
+                               BorderType mode = BorderType_Black, float contraste = 0.5){
             std::vector<std::pair<int,int>> borders =  std::vector<std::pair<int,int>>();
 
             auto fourNei = std::vector<std::pair<int,int>>();
@@ -115,32 +126,32 @@ namespace ImgCartoonizer {
 
                 switch (mode)
                 {
-                case 0:
+                case BorderType_Black:
                     *(resPix+0) = 0.0;
                     *(resPix+1) = 0.0;
                     *(resPix+2) = 0.0;
                     break;
-                case 1:
+                case BorderType_White:
                     *(resPix+0) = 1.0;
                     *(resPix+1) = 1.0;
                     *(resPix+2) = 1.0;
                     break;
-                case 2:
+                case BorderType_Average:
                     *(resPix+0) = nr;
                     *(resPix+1) = ng;
                     *(resPix+2) = nb;
                     break;
-                case 3:
+                case BorderType_InvAverage:
                     *(resPix+0) = 1-nr;
                     *(resPix+1) = 1-ng;
                     *(resPix+2) = 1-nb;
                     break;
-                case 4:
+                case BorderType_LessAverage:
                     *(resPix+0) = nr * (1.0-contraste);
                     *(resPix+1) = ng * (1.0-contraste);
                     *(resPix+2) = nb * (1.0-contraste);
                     break;
-                case 5:
+                case BorderType_MoreAverage:
                     *(resPix+0) = nr*(1.0-contraste)+contraste;
                     *(resPix+1) = ng*(1.0-contraste)+contraste;
                     *(resPix+2) = nb*(1.0-contraste)+contraste;
@@ -149,7 +160,8 @@ namespace ImgCartoonizer {
             }
         }
 
-        static Image generateFromFeatures(std::map<int,Feature> features, std::map<std::pair<int,int>,int> zones, int width, int height, int mode = 0, float contraste = 0.5){
+        static Image generateFromFeatures(std::map<int,Feature> features, std::map<std::pair<int,int>,int> zones,
+                                          int width, int height, int mode = 0, float contraste = 0.5){
             Image res = Image::Create(width,height,3);
 
             auto fourNei = std::vector<std::pair<int,int>>();
@@ -222,32 +234,32 @@ namespace ImgCartoonizer {
 
                 switch (mode)
                 {
-                case 0:
+                case BorderType_Black:
                     *(resPix+0) = 0.0;
                     *(resPix+1) = 0.0;
                     *(resPix+2) = 0.0;
                     break;
-                case 1:
+                case BorderType_White:
                     *(resPix+0) = 1.0;
                     *(resPix+1) = 1.0;
                     *(resPix+2) = 1.0;
                     break;
-                case 2:
+                case BorderType_Average:
                     *(resPix+0) = nr;
                     *(resPix+1) = ng;
                     *(resPix+2) = nb;
                     break;
-                case 3:
+                case BorderType_InvAverage:
                     *(resPix+0) = 1-nr;
                     *(resPix+1) = 1-ng;
                     *(resPix+2) = 1-nb;
                     break;
-                case 4:
+                case BorderType_LessAverage:
                     *(resPix+0) = nr * (1.0-contraste);
                     *(resPix+1) = ng * (1.0-contraste);
                     *(resPix+2) = nb * (1.0-contraste);
                     break;
-                case 5:
+                case BorderType_MoreAverage:
                     *(resPix+0) = nr*(1.0-contraste)+contraste;
                     *(resPix+1) = ng*(1.0-contraste)+contraste;
                     *(resPix+2) = nb*(1.0-contraste)+contraste;

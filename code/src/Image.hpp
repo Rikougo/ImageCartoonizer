@@ -220,7 +220,7 @@ namespace ImgCartoonizer {
 
         static bool Save(std::filesystem::path const &p_path, Image const &p_image, float min = 0., float max = 1.0) {
 
-           unsigned char * tmpData = new unsigned char[p_image.width * p_image.height * p_image.channels];
+           auto* tmpData = new unsigned char[p_image.width * p_image.height * p_image.channels];
 
             for(int i = 0 ; i < p_image.width * p_image.height * p_image.channels ; i ++){
                 tmpData[i] =  std::max(std::min((int)((p_image.data[i] - min ) / (max-min) * 255),255),0);
@@ -246,12 +246,12 @@ namespace ImgCartoonizer {
                         tmpData,
                         0
                         ) == 1;
-            } /*else {
+            } else {
                 throw std::exception("Unsupported file extension");
-            }*/
+            }
 
-            delete tmpData;
-            return 0;
+            delete[] tmpData;
+            return true;
         }
     };
 }

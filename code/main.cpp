@@ -8,126 +8,41 @@
 #include <Texture.hpp>
 
 int main(int argc, char * argv[]) {
-
-    bool singleCartoonArg = false;
-
-    if(singleCartoonArg){
-        auto l_image = ImgCartoonizer::Image::Load(argv[1]);
-        auto zones = ImgCartoonizer::LPE(l_image,25);
-        auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
-        auto resImgFeat = ImgCartoonizer::Feature::generateFromFeatures(features, zones, l_image.width, l_image.height);
-        
-        ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 4, 0.3);
-        ImgCartoonizer::Image::Save(argv[2], resImgFeat);
-
-        return 0;
-     }//else if(false){
-    //     auto l_image = ImgCartoonizer::Image::Load(argv[1]);
-    //     auto zones = ImgCartoonizer::LPE(l_image,25);
-
-    //     auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
-    //     auto textures = ImgCartoonizer::Texture::extractTextures(l_image, zones);
-    //     auto resImgTexTram  = ImgCartoonizer::Texture::generateTramFromTextures(textures, zones, l_image.width, l_image.height);
-
-        
-    //     ImgCartoonizer::Feature::setBorders(resImgTexTram, features, zones, l_image.width, l_image.height, 2, 0.3);
-    //     ImgCartoonizer::Image::Save(argv[2], resImgTexTram);
-
-    //     return 0;
-    // }
-
-
-    auto l_image = ImgCartoonizer::Image::Load("./images/dwight.png");
-
-    ImgCartoonizer::Image::Save("results/dwightGradient.png", ImgCartoonizer::gradientNorm(l_image)); 
-    //ImgCartoonizer::Image::Save("results/auroraCanny.png", ImgCartoonizer::cannyFilter(l_image));
-    //auto canny = cannyFilter(l_image);
-
-    auto zones = ImgCartoonizer::LPE(l_image,50);
-
-    //ImgCartoonizer::printUnUsedZones(zones, l_image.width, l_image.height );
-
-    //return 0;
-
-    //flat
-    auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
-    auto resImgFeat = ImgCartoonizer::Feature::generateFromFeatures(features, zones, l_image.width, l_image.height);
-    auto resImgFeat2 = resImgFeat;
-
-    ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 4, 0.3);
-    ImgCartoonizer::Image::Save("results/dwightFlat.png", resImgFeat);
-
-    ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, 2, 0.3);
-    ImgCartoonizer::Image::Save("results/dwightFlat2.png", resImgFeat);
-    
-
-    //texture
-    auto textures = ImgCartoonizer::Texture::extractTextures(l_image, zones);
-    auto resImgTex  = ImgCartoonizer::Texture::generateGradFromTextures(textures, zones, l_image.width, l_image.height);
-    auto resImgTexTram  = ImgCartoonizer::Texture::generateTramFromTextures(textures, zones, l_image.width, l_image.height);
-
-    ImgCartoonizer::Feature::setBorders(resImgTex,  features, zones, l_image.width, l_image.height, 4, 0.3);
-    ImgCartoonizer::Image::Save("results/dwightTex.png", resImgTex);
-
-    ImgCartoonizer::Feature::setBorders(resImgTexTram, features, zones, l_image.width, l_image.height, 2, 0.3);
-    ImgCartoonizer::Image::Save("results/dwightTexTramflat.png", resImgTexTram);
-
-    ImgCartoonizer::Feature::setBorders(resImgTexTram,  features, zones, l_image.width, l_image.height, 4, 0.3);
-    ImgCartoonizer::Image::Save("results/dwightTexTram.png", resImgTexTram);
-
-
-    //zones
-    ImgCartoonizer::Image::Save("results/dwightZones.png", ImgCartoonizer::fromZonesToImage(zones,l_image.width,l_image.height));
-
-    //imagettes (debug)
-    // auto imagettes =  ImgCartoonizer::Texture::splitZonesInImagettes(l_image,zones);
-    // ImgCartoonizer::Image::Save("results/dwightMergeFromImagettes.png", ImgCartoonizer::Texture::mergeFromImagettes(imagettes, zones, l_image.width, l_image.height));
-
-    
-
-    
-    {
-        /*
-        auto features = ImgCartoonizer::extractFeatures(l_image, zones);
-
-
-        ImgCartoonizer::Image::Save("results/MathieuBlack.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 0),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuWhite.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 1),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvg.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 2),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuInvAvg.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 3),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins10.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,0.1),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus10.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5, 0.1),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins20.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.2),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus20.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.2),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins30.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.3),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus30.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.3),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins40.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.4),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus40.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.4),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins50.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.5),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus50.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.5),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins60.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.6),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus60.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.6),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins70.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.7),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus70.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.7),0,1);
-        
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins80.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.8),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus80.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.8),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins90.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,.9),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus90.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,.9),0,1);
-
-        ImgCartoonizer::Image::Save("results/MathieuAvgMoins100.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 4,1.0),0,1);
-        ImgCartoonizer::Image::Save("results/MathieuAvgPlus100.png", ImgCartoonizer::generateFromFeatures(features, zones, l_image.width, l_image.height, 5,  1.0),0,1);
-        */
+    if (argc < 3) {
+        std::cout << "Usage: " << argv[0] << " <input_image> <output_image(png only)> [border-type(0-5)]" << std::endl;
+        return 1;
     }
 
+    std::filesystem::path l_path(argv[1]);
+    std::filesystem::path l_outputPath(argv[2]);
+
+    if (l_outputPath.extension() != ".png") {
+        std::cerr << "Output file must be a png file, it has automatically been changed." << std::endl;
+        l_outputPath.replace_extension(".png");
+    }
+
+    auto l_clock = std::chrono::high_resolution_clock::now();
+
+    auto l_borderType = ImgCartoonizer::BorderType_Black;
+    if (argc > 3) {
+        int l_intValue = std::stoi(argv[3]);
+        if (l_intValue < 0 || l_intValue > (int)ImgCartoonizer::BorderType_MoreAverage)
+            throw std::runtime_error("Invalid border type");
+
+        l_borderType = (ImgCartoonizer::BorderType)l_intValue;
+    }
+
+    auto l_image = ImgCartoonizer::Image::Load(l_path);
+    auto zones = ImgCartoonizer::LPE(l_image,25);
+    auto features = ImgCartoonizer::Feature::extractFeatures(l_image, zones);
+    auto resImgFeat = ImgCartoonizer::Feature::generateFromFeatures(features, zones, l_image.width, l_image.height);
+
+    ImgCartoonizer::Feature::setBorders(resImgFeat, features, zones, l_image.width, l_image.height, l_borderType, 0.3);
+    ImgCartoonizer::Image::Save(l_outputPath, resImgFeat);
+
+    auto l_endClock = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(l_endClock - l_clock).count() << "ms" << std::endl;
 
     return 0;
 }
