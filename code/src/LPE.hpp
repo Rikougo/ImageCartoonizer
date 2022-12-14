@@ -318,7 +318,6 @@ namespace ImgCartoonizer {
 
         for(auto z : sortedImage){
             if(zones[z.second] == -1){
-                std::cout<<"ALED"<<std::endl;
                 zones[z.second] = nextPool;
             }
         }

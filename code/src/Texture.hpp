@@ -147,7 +147,7 @@ namespace ImgCartoonizer {
         void generateDots(){
 
             double sizeMinDot = 3.0;
-            double lenMinDot = 5.0;
+            double lenMinDot = 5.0 ;
 
             dots = std::vector<std::pair<std::pair<int,int>,float>>();
 
@@ -162,13 +162,18 @@ namespace ImgCartoonizer {
 
             int i = 1;
             while(inImagette(tmp)){
+                //float size = std::max((float)sizeMinDot,map(i, 1, std::min(sizeX,sizeY)/len, (float)len*0.5, (float)len*0.1));
+                //float size = std::max((float)sizeMinDot,map(i, 1, std::min(sizeX,sizeY)/len, len*0.5, len*0.1));
+                float size = map(i, 1, std::min(sizeX,sizeY)/len, len*0.5, len*0.2);
+
                 while(inImagette(tmp)){
                     tmp = tmp + left;
-                    dots.push_back({tmp,std::max(sizeMinDot,(float)len*0.3)});
+                    dots.push_back({tmp,size}) ;
                 }
+                 tmp = c1 + forward*(i-1) + left;
                 do{
                     tmp = tmp - left;
-                    dots.push_back({tmp,std::max(sizeMinDot,(float)len*0.3)});
+                    dots.push_back({tmp,size}) ;
                 }while(inImagette(tmp));
 
                 tmp = c1 + forward*i++;
@@ -265,7 +270,6 @@ namespace ImgCartoonizer {
 
         static std::map<int,Imagette> splitZonesInImagettes(Image & l_image,std::map<std::pair<int,int>,int> & zones){
             int maxZone = zoneIndexMax(zones, l_image.width, l_image.height);
-            std::cout<<"maxZone : "<<maxZone<<std::endl;
 
             auto usedZones = printUnUsedZones(zones,l_image.width, l_image.height);
 

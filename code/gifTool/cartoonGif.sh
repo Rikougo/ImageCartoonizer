@@ -31,7 +31,7 @@ do
     pids[${i}]=$!
     let i=i+1
 
-    if [ $(expr $i % 16) == "0" ]; then
+    if [ $(expr $i % 32) == "0" ]; then
       for pid in ${pids[*]}; do
         wait $pid
       done
