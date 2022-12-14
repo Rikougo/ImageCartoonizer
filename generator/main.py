@@ -22,6 +22,8 @@ if __name__ == "__main__":
 
     lpe_filename = sys.argv[2]
 
+    prompt = " ".join(sys.argv[3:])
+
     print("Loading {} ({})".format(filename, filename_noext))
 
     key_file = open("api.key", "r")
@@ -52,8 +54,9 @@ if __name__ == "__main__":
 
         l_image.save(filename_noext + "_mask.png")
 
-        response = openai.Image.create_edit(image=open(lpe_filename, "rb"), mask=open(filename_noext + "_mask.png", "rb"), prompt="Zenyatta of overwatch on the cliff", n=1, size="512x512")
-        print(response['data'][0]['url'])
+        response = openai.Image.create_edit(image=open(lpe_filename, "rb"), mask=open(filename_noext + "_mask.png", "rb"), prompt=prompt, n=5, size="512x512")
+        for r in response['data']:
+            print(r['url'])
         break
 
 
